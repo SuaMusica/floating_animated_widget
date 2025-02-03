@@ -186,7 +186,6 @@ class _FloatingDraggableWidgetState extends State<FloatingDraggableWidget>
 
         /// if the user touch of even gesture detector detect any drag gesture out side of the widget the dragging will be false
         onPanStart: (value) {
-          widget.onDragging?.call(true);
           setState(() {
             isTabbed = false;
           });
@@ -281,6 +280,7 @@ class _FloatingDraggableWidgetState extends State<FloatingDraggableWidget>
 
                         /// also in the case when a user start to drag the widget
                         onPanStart: (value) {
+                          widget.onDragging?.call(true);
                           setState(() {
                             isTabbed = true;
                             isDragging = true;
