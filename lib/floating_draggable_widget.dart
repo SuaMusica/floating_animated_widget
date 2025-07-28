@@ -23,6 +23,8 @@ class FloatingDraggableWidget extends StatefulWidget {
     this.onDeleteWidget,
     this.bottom,
     this.isDraggable = true,
+    this.restrictToVertical = false,
+    this.restrictToHorizontal = false,
     this.autoAlign = false,
     this.deleteWidgetAlignment = Alignment.bottomCenter,
     this.deleteWidgetAnimationDuration = 200,
@@ -37,6 +39,8 @@ class FloatingDraggableWidget extends StatefulWidget {
     this.resizeToAvoidBottomInset = true,
     this.onDragging,
     this.widgetWhenDragging,
+    this.onDxChanged,
+    this.onDyChanged,
   }) : super(key: key);
 
   /// mainScreenWidget is required and it accept any widget.
@@ -52,6 +56,10 @@ class FloatingDraggableWidget extends StatefulWidget {
   /// speed accepts a double value which is the speed factor of the floating widget after it will be let go.
   /// The more speed will be provided the slower the object will move after the user let the widget go freely.
   /// isDraggable accepts a boolean value which is used to make the floating widget draggable or not.
+  /// restrictToVertical accepts a boolean value which restricts the floating widget movement to vertical axis only.
+  /// When true, the widget can only be moved up and down, maintaining its horizontal position.
+  /// restrictToHorizontal accepts a boolean value which restricts the floating widget movement to horizontal axis only.
+  /// When true, the widget can only be moved left and right, maintaining its vertical position.
   /// autoAlign accepts a boolean value which is used to make the floating widget auto align.
   /// deleteWidget accepts a widget which is used to delete the floating widget.
   /// onDeleteWidget accepts a function which is used to delete the floating widget.
@@ -77,6 +85,8 @@ class FloatingDraggableWidget extends StatefulWidget {
   final double? screenWidth;
   final double? speed;
   final bool isDraggable;
+  final bool restrictToVertical;
+  final bool restrictToHorizontal;
   final bool autoAlign;
   final Widget? deleteWidget;
   final Function()? onDeleteWidget;
@@ -90,6 +100,12 @@ class FloatingDraggableWidget extends StatefulWidget {
   final double isCollidingDeleteWidgetWidth;
   final EdgeInsets? deleteWidgetPadding;
   final BoxDecoration? deleteWidgetDecoration;
+
+  /// onDxChanged optionally accepts a function which is used to notify the user when the widget is moved.
+  final void Function(double? dx)? onDxChanged;
+
+  /// onDyChanged optionally accepts a function which is used to notify the user when the widget is moved.
+  final void Function(double? dy)? onDyChanged;
 
   /// onDragging optionally accepts a function which is used to notify the user when the widget is dragging.
   final Function(bool)? onDragging;
@@ -293,11 +309,20 @@ class _FloatingDraggableWidgetState extends State<FloatingDraggableWidget>
                             if (isTabbed && isDragEnable) {
                               isColliding = hasDeleteWidget &&
                                   hasCollision(containerKey1, containerKey2);
-                              top = _getDy(
+
+                              // Only update top if not restricted to horizontal movement
+                              if (!widget.restrictToHorizontal) {
+                                top = _getDy(
                                   value.globalPosition.dy -
                                       (widget.floatingWidgetHeight),
-                                  height);
-                              left = _getDx(value.globalPosition.dx, width);
+                                  height,
+                                );
+                              }
+
+                              // Only update left if not restricted to vertical movement
+                              if (!widget.restrictToVertical) {
+                                left = _getDx(value.globalPosition.dx, width);
+                              }
                             }
                           });
                         },
@@ -308,16 +333,26 @@ class _FloatingDraggableWidgetState extends State<FloatingDraggableWidget>
                           setState(() {
                             if (isTabbed && isDragEnable) {
                               isDragging = false;
-                              left = _getDx(
+
+                              // Only apply horizontal velocity if not restricted to vertical
+                              if (!widget.restrictToVertical) {
+                                left = _getDx(
                                   left +
                                       value.velocity.pixelsPerSecond.dx /
                                           (widget.speed ?? 50.0).toDouble(),
-                                  width);
-                              top = _getDy(
+                                  width,
+                                );
+                              }
+
+                              // Only apply vertical velocity if not restricted to horizontal
+                              if (!widget.restrictToHorizontal) {
+                                top = _getDy(
                                   top +
                                       value.velocity.pixelsPerSecond.dy /
                                           (widget.speed ?? 50.0).toDouble(),
-                                  height);
+                                  height,
+                                );
+                              }
                             }
                             if (hasDeleteWidget && isColliding) {
                               isRemoved = true;
@@ -332,7 +367,10 @@ class _FloatingDraggableWidgetState extends State<FloatingDraggableWidget>
                           ///  left = width - widget.floatingWidgetWidth;
                           ///  if the widget on the right side then
                           ///  left = 0
-                          if (widget.autoAlign) {
+                          /// Auto align only works if not restricted to vertical or horizontal movement
+                          if (widget.autoAlign &&
+                              !widget.restrictToVertical &&
+                              !widget.restrictToHorizontal) {
                             if (left >= width / 2) {
                               setState(() {
                                 left = width - widget.floatingWidgetWidth;
@@ -387,7 +425,7 @@ class _FloatingDraggableWidgetState extends State<FloatingDraggableWidget>
         currentTop = dy;
       }
     }
-
+    widget.onDyChanged?.call(dy);
     return currentTop;
   }
 
@@ -406,7 +444,7 @@ class _FloatingDraggableWidgetState extends State<FloatingDraggableWidget>
         currentLeft = dx;
       }
     }
-
+    widget.onDxChanged?.call(dx);
     return currentLeft;
   }
 }
