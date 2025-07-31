@@ -16,6 +16,7 @@ class FloatingDraggableWidget extends StatefulWidget {
     required this.floatingWidgetHeight,
     this.dy,
     this.dx,
+    this.dxFromRight,
     this.screenHeight,
     this.screenWidth,
     this.speed,
@@ -80,6 +81,7 @@ class FloatingDraggableWidget extends StatefulWidget {
   final Widget floatingWidget;
   final double? dy;
   final double? dx;
+  final double? dxFromRight;
   final double? bottom;
   final double? screenHeight;
   final double? screenWidth;
@@ -260,9 +262,10 @@ class _FloatingDraggableWidgetState extends State<FloatingDraggableWidget>
                       /// otherwise the bottom and right will be null.
                       top: top == -1 ? null : top,
                       left: left == -1 ? null : left,
-                      right: widget.dx == null && left == -1 && top == -1
-                          ? 20
-                          : null,
+                      right: widget.dxFromRight ??
+                          (widget.dx == null && left == -1 && top == -1
+                              ? 20
+                              : null),
                       bottom: widget.bottom ??
                           (widget.dy == null && left == -1 && top == -1
                               ? 20
